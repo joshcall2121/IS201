@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wordle Clone</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f4f4f4;
+      margin: 0;
+    }
+
+    .game-container {
+      text-align: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 50px);
+      grid-gap: 5px;
+      margin-bottom: 20px;
+    }
+
+    .cell {
+      width: 50px;
+      height: 50px;
+      background-color: #ddd;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      border-radius: 5px;
+    }
+
+    .correct {
+      background-color: green;
+      color: white;
+    }
+
+    .wrong-position {
+      background-color: yellow;
+      color: white;
+    }
+
+    .incorrect {
+      background-color: gray;
+      color: white;
+    }
+
+    .message {
+      font-size: 20px;
+      margin-top: 20px;
+    }
+
+    .input-row {
+      display: flex;
+      justify-content: center;
+    }
+
+    .input-cell {
+      width: 40px;
+      height: 40px;
+      margin: 5px;
+      font-size: 24px;
+      text-align: center;
+      text-transform: uppercase;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .input-cell:focus {
+      outline: none;
+      border-color: #333;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-container">
+    <h1>Wordle Clone</h1>
+    <div id="grid" class="grid"></div>
+    <div class="message" id="message"></div>
+    <div class="input-row">
+      <input type="text" id="guessInput" maxlength="1" class="input-cell" autofocus oninput="moveFocus(event)">
+      <input type="text" id="guessInput2" maxlength="1" class="input-cell" oninput="moveFocus(event)">
+      <input type="text" id="guessInput3" maxlength="1" class="input-cell" oninput="moveFocus(event)">
+      <input type="text" id="guessInput4" maxlength="1" class="input-cell" oninput="moveFocus(event)">
+      <input type="text" id="guessInput5" maxlength="1" class="input-cell" oninput="moveFocus(event)">
+    </div>
+    <button onclick="submitGuess()">Submit Guess</button>
+  </div>
+
+  <script>
+    const wordList = ['apple', 'table', 'grape', 'peach', 'berry'];
+    const randomWord = wordList[Math.floor(Math.random() * wordList.length)];
+
+    let attempts = 0;
+    let guessedWords = [];
+
+    // Create grid for the guesses
+    const gridElement = document.getElementById("grid");
+    for (let i = 0; i < 6; i++) {
+      let row = [];
+      for (let j = 0; j < 5; j++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        row.push(cell);
+        gridElement.appendChild(cell);
+      }
+      guessedWords.push(row);
+    }
+
+    // Move focus to the next input box when a letter is typed
+    function moveFocus(event) {
+      const currentInput = event.target;
+      const nextInput = currentInput.nextElementSibling;
+      if (nextInput && currentInput.value !== "") {
+        nextInput.focus();
+      }
+    }
+
+    // Submit guess function
+    function submitGuess() {
+      const guess = [
+        document.getElementById('guessInput').value,
+        document.getElementById('guessInput2').value,
+        document.getElementById('guessInput3').value,
+        document.getElementById('guessInput4').value,
+        document.getElementById('guessInput5').value
+      ].join('').toLowerCase();
+
+      if (guess.length !== 5) {
+        alert('Please enter a 5-letter word!');
+        return;
+      }
+
+      attempts++;
+
+      const result = checkGuess(guess);
+
+      // Update the grid with the result of the guess
+      for (let i = 0; i < 5; i++) {
+        const cell = guessedWords[attempts - 1][i];
+        if (result[i] === 'correct') {
+          cell.classList.add('correct');
+        } else if (result[i] === 'wrong-position') {
+          cell.classList.add('wrong-position');
+        } else {
+          cell.classList.add('incorrect');
+        }
+        cell.textContent = guess[i].toUpperCase();
+      }
+
+      // Check if the guess is correct
+      if (guess === randomWord) {
+        document.getElementById('message').textContent = 'Congratulations! You guessed the word!';
+        return;
+      }
+
+      if (attempts === 6) {
+        document.getElementById('message').textContent = 'Game Over! The word was: ' + randomWord;
+      }
+
+      // Clear the input boxes for the next guess
+      clearInputFields();
+    }
+
+    // Check the guess against the random word
+    function checkGuess(guess) {
+      let result = [];
+      let wordArray = randomWord.split('');
+      let guessArray = guess.split('');
+
+      // First, check for correct letters in the correct positions
+      for (let i = 0; i < 5; i++) {
+        if (guessArray[i] === wordArray[i]) {
+          result[i] = 'correct';
+          wordArray[i] = null; // Mark this letter as used
+        } else {
+          result[i] = null;
+        }
+      }
+
+      // Then, check for correct letters in the wrong positions
+      for (let i = 0; i < 5; i++) {
+        if (result[i] === null && wordArray.includes(guessArray[i])) {
+          result[i] = 'wrong-position';
+          wordArray[wordArray.indexOf(guessArray[i])] = null; // Remove used letter
+        }
+      }
+
+      // Mark remaining letters as incorrect
+      for (let i = 0; i < 5; i++) {
+        if (result[i] === null) {
+          result[i] = 'incorrect';
+        }
+      }
+
+      return result;
+    }
+
+    // Clear the input fields after each guess
+    function clearInputFields() {
+      document.getElementById('guessInput').value = '';
+      document.getElementById('guessInput2').value = '';
+      document.getElementById('guessInput3').value = '';
+      document.getElementById('guessInput4').value = '';
+      document.getElementById('guessInput5').value = '';
+      document.getElementById('guessInput').focus();
+    }
+
+    // Allow pressing Enter to submit the guess
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') {
+        submitGuess();
+      } else if (event.key === 'Backspace') {
+        handleBackspace(event);
+      }
+    });
+
+    // Handle Backspace key to delete letters
+    function handleBackspace(event) {
+      const inputs = document.querySelectorAll('.input-cell');
+      for (let i = inputs.length - 1; i >= 0; i--) {
+        if (inputs[i].value !== '') {
+          inputs[i].value = '';
+          inputs[i].focus();
+          break;
+        }
+      }
+    }
+  </script>
+</body>
+</html>
